@@ -45,6 +45,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // On macOS 13 SwiftUI does not reliably call `onDisappear` when the settings window is
+        // closed with ⌘W, so the app stayed `.regular` (Dock icon, menu bar) afterwards. Follow
+        // the window itself instead; both calls are safe to repeat.
+        let center = NotificationCenter.default
+        center.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { [weak self] note in
+            guard (note.object as? NSWindow)?.identifier?.rawValue == HardwareSentryApp.settingsWindowID else { return }
+            Task { @MainActor [weak self] in self?.general.settingsWindowClosed() }
+        }
+        center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { [weak self] note in
+            guard (note.object as? NSWindow)?.identifier?.rawValue == HardwareSentryApp.settingsWindowID else { return }
+            Task { @MainActor [weak self] in
+                guard let self, !self.general.isSettingsWindowOpen else { return }
+                self.general.settingsWindowOpened()
+            }
+        }
         guard terminateIfAlreadyRunning() else { return }
 
         Task {
