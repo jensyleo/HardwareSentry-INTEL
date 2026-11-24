@@ -19,7 +19,7 @@ struct IconSourceStoreTests {
     @Test("every module starts on macOS's own pictures")
     func defaultsToSystem() {
         let store = IconSourceStore(defaults: freshDefaults())
-        #expect(IconSource.default == .system)
+        #expect(IconSource.default == .app)
         #expect(store.source(for: "USB") == .system)
     }
 

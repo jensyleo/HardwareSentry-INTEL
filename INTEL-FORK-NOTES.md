@@ -16,3 +16,4 @@ Apple Silicon, macOS 15, Swift 6). Kept separate from `README.md`/`CHANGELOG.md`
 xcodebuild -project HardwareSentry.xcodeproj -scheme HardwareSentry -configuration Release -arch x86_64 build
 ```
 Status: Debug build succeeds and the app launches on macOS 13.7 (Intel). Not yet exercised feature by feature.
+- Default icon source is **App** (the application's own artwork), not System; matches the Apple Silicon build as the owner uses it. System is still one click away per module in the Icons tab.

@@ -13,7 +13,7 @@ public enum IconSource: String, Sendable, Equatable, CaseIterable {
     case system
 
     /// What a module uses until somebody chooses otherwise.
-    public static let `default`: IconSource = .system
+    public static let `default`: IconSource = .app
 }
 
 /// Which modules someone has switched to the operating system's pictures, as one value
