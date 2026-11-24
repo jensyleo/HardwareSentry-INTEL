@@ -5,7 +5,7 @@ import SentryContract
 import ScannerMonitor
 import USBMonitor
 import VolumeMonitor
-import Observation
+import Combine
 
 /// The handful of numbers that change how often a monitor speaks, rather than whether it
 /// speaks at all.
@@ -15,13 +15,12 @@ import Observation
 /// preferences file under readable keys, so an exported profile carries them along with
 /// everything else.
 @MainActor
-@Observable
-final class MonitorTuningModel {
-    @ObservationIgnored private let defaults: UserDefaults
+final class MonitorTuningModel: ObservableObject {
+    private let defaults: UserDefaults
     /// Called after any change, so the running monitors take it immediately rather than
     /// at the next launch — a slider that needs a restart to mean anything is a slider
     /// that looks broken.
-    @ObservationIgnored var onChange: (@MainActor () -> Void)?
+    var onChange: (@MainActor () -> Void)?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -110,38 +109,38 @@ final class MonitorTuningModel {
             .flatMap(ConnectionNaming.init(rawValue:)) ?? .mediumAndType
     }
 
-    var repeatsPowerStatus: Bool {
+    @Published var repeatsPowerStatus: Bool {
         didSet { defaults.set(repeatsPowerStatus, forKey: Self.refireEnabledKey); onChange?() }
     }
 
-    var refireMinutes: Double {
+    @Published var refireMinutes: Double {
         didSet { defaults.set(refireMinutes, forKey: Self.refireMinutesKey); onChange?() }
     }
 
-    var refireOnlyOnBattery: Bool {
+    @Published var refireOnlyOnBattery: Bool {
         didSet { defaults.set(refireOnlyOnBattery, forKey: Self.refireOnlyOnBatteryKey); onChange?() }
     }
 
-    var checksBatteryHealth: Bool {
+    @Published var checksBatteryHealth: Bool {
         didSet { defaults.set(checksBatteryHealth, forKey: Self.healthEnabledKey); onChange?() }
     }
 
-    var healthCheckDays: Double {
+    @Published var healthCheckDays: Double {
         didSet { defaults.set(healthCheckDays, forKey: Self.healthDaysKey); onChange?() }
     }
 
     /// A more frequent, optional repeat of the same health numbers — hours rather than
     /// days, and separate from "Check every" above: this one is about hearing the figure
     /// again, not about whether it has moved.
-    var notifiesHealthReminder: Bool {
+    @Published var notifiesHealthReminder: Bool {
         didSet { defaults.set(notifiesHealthReminder, forKey: Self.healthNotifyEnabledKey); onChange?() }
     }
 
-    var healthNotifyHours: Double {
+    @Published var healthNotifyHours: Double {
         didSet { defaults.set(healthNotifyHours, forKey: Self.healthNotifyHoursKey); onChange?() }
     }
 
-    var lowSpacePercent: Double {
+    @Published var lowSpacePercent: Double {
         didSet { defaults.set(lowSpacePercent, forKey: Self.lowSpacePercentKey); onChange?() }
     }
 
@@ -149,7 +148,7 @@ final class MonitorTuningModel {
     ///
     /// Read at launch: the interval is handed to the detector's polling task when the
     /// module starts.
-    var videoLinkSeconds: Double {
+    @Published var videoLinkSeconds: Double {
         didSet { defaults.set(videoLinkSeconds, forKey: Self.videoLinkSecondsKey); onChange?() }
     }
 
@@ -159,20 +158,20 @@ final class MonitorTuningModel {
     ///
     /// Adjustable because what counts as dangerously loud depends on what is plugged in:
     /// ninety percent into studio headphones is not ninety percent into a laptop speaker.
-    var audioVolumeCriticalPercent: Double {
+    @Published var audioVolumeCriticalPercent: Double {
         didSet { defaults.set(audioVolumeCriticalPercent, forKey: Self.audioVolumeCriticalKey); onChange?() }
     }
 
     /// A Multi-Output/Aggregate device, or a driver an app like Zoom or Teams installs to
     /// capture what is playing, is software rather than something that arrived or left —
     /// off by default so it does not read as a plugged-in device.
-    var notifiesVirtualAudioDevices: Bool {
+    @Published var notifiesVirtualAudioDevices: Bool {
         didSet { defaults.set(notifiesVirtualAudioDevices, forKey: Self.virtualAudioDevicesKey); onChange?() }
     }
 
     /// Same reasoning, for a camera an app makes up (OBS, a video-call plugin) rather
     /// than one that is actually plugged in or built in.
-    var notifiesVirtualCameraDevices: Bool {
+    @Published var notifiesVirtualCameraDevices: Bool {
         didSet { defaults.set(notifiesVirtualCameraDevices, forKey: Self.virtualCameraDevicesKey); onChange?() }
     }
 
@@ -184,31 +183,31 @@ final class MonitorTuningModel {
     /// full detail of a redundant pair, matching the improvement over the original application's own
     /// behaviour asked for directly; off folds USB Monitor's notice away and leaves only
     /// Audio's own.
-    var notifiesUSBAudioDevices: Bool {
+    @Published var notifiesUSBAudioDevices: Bool {
         didSet { defaults.set(notifiesUSBAudioDevices, forKey: Self.usbAudioDevicesKey); onChange?() }
     }
 
     /// Same, for a camera arriving over USB.
     /// Whether Audio Monitor also announces a Bluetooth accessory that Bluetooth Monitor
     /// already announced. Off by default, as it has always behaved.
-    var notifiesBluetoothAudioDevices: Bool {
+    @Published var notifiesBluetoothAudioDevices: Bool {
         didSet { defaults.set(notifiesBluetoothAudioDevices, forKey: Self.bluetoothAudioDevicesKey); onChange?() }
     }
 
     /// Whether Bluetooth Monitor announces a controller Gamepad Monitor also speaks for.
     /// On by default, as it has always behaved.
-    var notifiesBluetoothGamepadDevices: Bool {
+    @Published var notifiesBluetoothGamepadDevices: Bool {
         didSet { defaults.set(notifiesBluetoothGamepadDevices, forKey: Self.bluetoothGamepadDevicesKey); onChange?() }
     }
 
-    var notifiesUSBCameraDevices: Bool {
+    @Published var notifiesUSBCameraDevices: Bool {
         didSet { defaults.set(notifiesUSBCameraDevices, forKey: Self.usbCameraDevicesKey); onChange?() }
     }
 
     /// Same, for a gamepad/joystick arriving over USB — Gamepad Monitor's own notice
     /// always fires regardless (it comes from GameController framework, not this switch);
     /// off only folds away USB Monitor's now-correctly-labelled "Gamepad/Joystick" row.
-    var notifiesUSBGamepadDevices: Bool {
+    @Published var notifiesUSBGamepadDevices: Bool {
         didSet { defaults.set(notifiesUSBGamepadDevices, forKey: Self.usbGamepadDevicesKey); onChange?() }
     }
 
@@ -216,14 +215,14 @@ final class MonitorTuningModel {
     /// about — off by default, so a device with a real class name but no row of its own
     /// (a hub's internal Billboard/Communications interface, most often) keeps
     /// announcing there exactly as it always has.
-    var usbIgnoresIdentifiedGenericDevices: Bool {
+    @Published var usbIgnoresIdentifiedGenericDevices: Bool {
         didSet { defaults.set(usbIgnoresIdentifiedGenericDevices, forKey: Self.usbIgnoresIdentifiedGenericDevicesKey); onChange?() }
     }
 
     /// Off falls a `0xE0` device back to the plain "Wireless Controller" row, exactly as
     /// it read before this distinction existed — see `USBWirelessDetectionSettings`. On
     /// by default: this is a reliable USB-IF signature, not a guess.
-    var usbDetectsBluetoothAdapters: Bool {
+    @Published var usbDetectsBluetoothAdapters: Bool {
         didSet { defaults.set(usbDetectsBluetoothAdapters, forKey: Self.usbDetectsBluetoothAdaptersKey); onChange?() }
     }
 
@@ -231,18 +230,18 @@ final class MonitorTuningModel {
     /// vendor-ID guess — see `USBWiFiVendorDatabase`'s own doc comment for why this
     /// earned a separate switch from Bluetooth's: these vendors also sell plenty that is
     /// not WiFi, so this can mislabel one of those. On by default.
-    var usbDetectsWiFiAdapters: Bool {
+    @Published var usbDetectsWiFiAdapters: Bool {
         didSet { defaults.set(usbDetectsWiFiAdapters, forKey: Self.usbDetectsWiFiAdaptersKey); onChange?() }
     }
 
     /// Whether the serial/debug-adapter vendor list (see `USBSerialVendorDatabase`) checks
     /// itself against its own GitHub-hosted copy on a schedule, rather than only when
     /// somebody presses "Check Now".
-    var usbSerialVendorAutoUpdate: Bool {
+    @Published var usbSerialVendorAutoUpdate: Bool {
         didSet { defaults.set(usbSerialVendorAutoUpdate, forKey: Self.usbSerialVendorAutoUpdateKey); onChange?() }
     }
 
-    var usbSerialVendorUpdateDays: Double {
+    @Published var usbSerialVendorUpdateDays: Double {
         didSet { defaults.set(usbSerialVendorUpdateDays, forKey: Self.usbSerialVendorUpdateDaysKey); onChange?() }
     }
 
@@ -251,7 +250,7 @@ final class MonitorTuningModel {
     /// reach out to the network on a schedule, not something to take on faith. Restored to
     /// `USBSerialVendorDatabase.updateURL` (this application's own GitHub copy) by
     /// "Restore Defaults" on this section.
-    var usbSerialVendorUpdateURLString: String {
+    @Published var usbSerialVendorUpdateURLString: String {
         didSet { defaults.set(usbSerialVendorUpdateURLString, forKey: Self.usbSerialVendorUpdateURLKey); onChange?() }
     }
 
@@ -270,7 +269,7 @@ final class MonitorTuningModel {
     /// generically classified as it would have been before this feature existed, and no
     /// background polling task ever runs for it. On by default, matching every prior
     /// behaviour.
-    var massStorageDetectionEnabled: Bool {
+    @Published var massStorageDetectionEnabled: Bool {
         didSet { defaults.set(massStorageDetectionEnabled, forKey: Self.massStorageDetectionEnabledKey); onChange?() }
     }
 
@@ -281,7 +280,7 @@ final class MonitorTuningModel {
     /// (`wifiSignalSeconds`/`wifiSignalCooldownSeconds`) on purpose: same idea, a check
     /// interval and a bound on how long to keep checking. Takes effect the next time
     /// the application starts, like every other USB source setting here.
-    var massStoragePollMilliseconds: Double {
+    @Published var massStoragePollMilliseconds: Double {
         didSet { defaults.set(massStoragePollMilliseconds, forKey: Self.massStoragePollMillisecondsKey); onChange?() }
     }
 
@@ -290,7 +289,7 @@ final class MonitorTuningModel {
     /// real slow enclosure — see `IOKitUSBDeviceSource.enrichedMassStorageHint`'s own
     /// comment — lowering it risks reintroducing that exact, already-fixed bug for a
     /// disk slower than whatever this is tested against.
-    var massStorageTimeoutSeconds: Double {
+    @Published var massStorageTimeoutSeconds: Double {
         didSet { defaults.set(massStorageTimeoutSeconds, forKey: Self.massStorageTimeoutSecondsKey); onChange?() }
     }
 
@@ -300,7 +299,7 @@ final class MonitorTuningModel {
     /// polling task when that scanner is discovered, and changing it mid-flight would mean
     /// tearing those down and rebuilding them — which would re-announce every scanner on
     /// the network as newly found.
-    var scannerStatusSeconds: Double {
+    @Published var scannerStatusSeconds: Double {
         didSet { defaults.set(scannerStatusSeconds, forKey: Self.scannerStatusSecondsKey) }
     }
 
@@ -313,7 +312,7 @@ final class MonitorTuningModel {
     /// A Time Machine disk that mounts on a schedule, or a virtual-machine image that
     /// mounts every time a VM starts, is a notification nobody caused and nobody wants.
     /// Held as one string per line, which is what a list somebody edits by hand should be.
-    var ignoredDrives: [String] {
+    @Published var ignoredDrives: [String] {
         didSet {
             defaults.set(ignoredDrives, forKey: Self.ignoredDrivesKey)
             onChange?()
@@ -326,17 +325,17 @@ final class MonitorTuningModel {
 
     /// Whether the volumes macOS mounts for itself are passed over. On unless somebody
     /// has said otherwise — see `VolumeExclusions.ignoresSystemManagedVolumes`.
-    var ignoresSystemManagedVolumes: Bool {
+    @Published var ignoresSystemManagedVolumes: Bool {
         didSet { defaults.set(ignoresSystemManagedVolumes, forKey: Self.systemManagedVolumesKey); onChange?() }
     }
 
     /// Whether every message ends with the module that raised it. Off by default — see
     /// `MonitorContext.namesReportingModule`.
-    var namesReportingModule: Bool {
+    @Published var namesReportingModule: Bool {
         didSet { defaults.set(namesReportingModule, forKey: Self.namesReportingModuleKey); onChange?() }
     }
 
-    var connectionNaming: ConnectionNaming {
+    @Published var connectionNaming: ConnectionNaming {
         didSet { defaults.set(connectionNaming.rawValue, forKey: Self.connectionNamingKey) }
     }
 
@@ -344,18 +343,18 @@ final class MonitorTuningModel {
     /// promiscuous-interface check, no bond-member check, since all three share this one
     /// cadence (see `SystemNetworkSource.startWiFiSignalPoll`). For whoever wants zero
     /// periodic work from this feature rather than a slower one. On by default.
-    var wifiSignalPollingEnabled: Bool {
+    @Published var wifiSignalPollingEnabled: Bool {
         didSet { defaults.set(wifiSignalPollingEnabled, forKey: Self.wifiSignalPollingEnabledKey); onChange?() }
     }
 
     /// How often the Wi-Fi signal is read, and how long to leave between saying anything
     /// about it. Both read at launch: they are handed to the source and the monitor when
     /// those are built.
-    var wifiSignalSeconds: Double {
+    @Published var wifiSignalSeconds: Double {
         didSet { defaults.set(wifiSignalSeconds, forKey: Self.wifiSignalSecondsKey) }
     }
 
-    var wifiSignalCooldownSeconds: Double {
+    @Published var wifiSignalCooldownSeconds: Double {
         didSet { defaults.set(wifiSignalCooldownSeconds, forKey: Self.wifiSignalCooldownKey) }
     }
 
@@ -363,41 +362,41 @@ final class MonitorTuningModel {
     /// a backstop behind the push notification that usually reports a change immediately.
     /// Cheap (a single flag read) but a real, periodic wake-up, so it is a setting rather
     /// than an unconditional number.
-    var wifiRadioSeconds: Double {
+    @Published var wifiRadioSeconds: Double {
         didSet { defaults.set(wifiRadioSeconds, forKey: Self.wifiRadioSecondsKey) }
     }
 
     /// How often the paired-Bluetooth-device list is re-read. There is no push
     /// notification for pairing-list membership changing, only for one specific device
     /// connecting or disconnecting.
-    var bluetoothPairedSeconds: Double {
+    @Published var bluetoothPairedSeconds: Double {
         didSet { defaults.set(bluetoothPairedSeconds, forKey: Self.bluetoothPairedSecondsKey) }
     }
 
     /// How often connected Bluetooth devices' signal strength (RSSI) is re-read — the
     /// same question Wi-Fi's own signal poll answers, for the same reason: no
     /// notification exists for a signal moving.
-    var bluetoothSignalSeconds: Double {
+    @Published var bluetoothSignalSeconds: Double {
         didSet { defaults.set(bluetoothSignalSeconds, forKey: Self.bluetoothSignalSecondsKey) }
     }
 
     /// How often CoreBluetooth-connected BLE accessories are re-read. Slower than the
     /// other two by design — a BLE accessory does not come and go the way a cable does.
-    var bluetoothBLESeconds: Double {
+    @Published var bluetoothBLESeconds: Double {
         didSet { defaults.set(bluetoothBLESeconds, forKey: Self.bluetoothBLESecondsKey) }
     }
 
     /// How often CUPS's destination and job lists are re-read. Neither libcups nor
     /// AppKit's printing API offers a push notification for "a printer was added" or "a
     /// job's state changed" — confirmed in the original application's own history.
-    var printerSeconds: Double {
+    @Published var printerSeconds: Double {
         didSet { defaults.set(printerSeconds, forKey: Self.printerSecondsKey) }
     }
 
     /// How often free space is re-read for every mounted volume. There is no notification
     /// for free space changing, and this already defaults to five minutes precisely
     /// because a disk read on every mounted volume is the heaviest of these six.
-    var volumeFreeSpaceSeconds: Double {
+    @Published var volumeFreeSpaceSeconds: Double {
         didSet { defaults.set(volumeFreeSpaceSeconds, forKey: Self.volumeFreeSpaceSecondsKey) }
     }
 
@@ -407,7 +406,7 @@ final class MonitorTuningModel {
     /// can be much tighter than the free-space poll. Ten seconds is Kubernetes' default for
     /// the same job, and with a second confirming look a few seconds later an outage is
     /// reported in roughly a quarter of a minute.
-    var volumeReachabilitySeconds: Double {
+    @Published var volumeReachabilitySeconds: Double {
         didSet { defaults.set(volumeReachabilitySeconds, forKey: Self.volumeReachabilitySecondsKey) }
     }
 
@@ -436,7 +435,7 @@ final class MonitorTuningModel {
     /// to add, or the request itself failed. Session-only, on purpose: this is feedback
     /// for the button that was just pressed, not a durable setting, so it is never written
     /// to `UserDefaults` and starts `nil` again on every launch.
-    var serialVendorUpdateStatus: String?
+    @Published var serialVendorUpdateStatus: String?
 
     // MARK: - What the monitors are given
 

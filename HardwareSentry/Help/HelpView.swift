@@ -46,14 +46,14 @@ struct HelpView: View {
                 .navigationSplitViewColumnWidth(min: 220, ideal: 240)
                 .overlay {
                     if matches.isEmpty {
-                        ContentUnavailableView.search(text: query)
+                        EmptyStateView.search(text: query)
                     }
                 }
             } detail: {
                 if let topic = topics.first(where: { $0.id == selection }) {
                     TopicPage(topic: topic)
                 } else {
-                    ContentUnavailableView("Pick a topic", systemImage: "book")
+                    EmptyStateView("Pick a topic", systemImage: "book")
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

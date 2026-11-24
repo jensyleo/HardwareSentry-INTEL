@@ -135,7 +135,7 @@ private final class Watcher: NSObject, CBCentralManagerDelegate, CBPeripheralDel
         // connected to, and a BLE accessory does not come and go the way a cable does.
         blePollTask = Task { [weak self, blePollInterval] in
             while !Task.isCancelled {
-                await MainActor.run { self?.refreshBLEAccessories() }
+                await MainActor.run { [weak self] in self?.refreshBLEAccessories() }
                 try? await Task.sleep(for: blePollInterval)
             }
         }
@@ -300,7 +300,7 @@ private final class Watcher: NSObject, CBCentralManagerDelegate, CBPeripheralDel
         bleCoalescing[id] = Task { [weak self] in
             try? await Task.sleep(for: Self.bleCoalesceDelay)
             guard !Task.isCancelled else { return }
-            await MainActor.run { self?.reportBLE(id: id, name: name) }
+            await MainActor.run { [weak self] in self?.reportBLE(id: id, name: name) }
         }
     }
 

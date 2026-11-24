@@ -15,7 +15,7 @@ struct EventIconPicker: View {
     /// itself, so the row answers "which notification is this?" before anyone clicks —
     /// and so the button is the icon it changes rather than an abstract placeholder.
     let defaultIcon: NotificationIcon
-    @Bindable var store: IconOverrideStore
+    @ObservedObject var store: IconOverrideStore
     /// The operating system's picture, when this row's module is set to "System" and
     /// macOS has one — shown in place of `defaultIcon`.
     var systemImage: NSImage? = nil
@@ -213,7 +213,7 @@ struct EventIconPicker: View {
 struct EventIconButtons: View {
     let event: String
     let category: NotificationCategory
-    @Bindable var store: IconOverrideStore
+    @ObservedObject var store: IconOverrideStore
     /// Whether, with nothing chosen, this icon would be macOS's picture — the only case
     /// where asking for the app's own picture changes anything.
     var systemWouldApply: Bool = false

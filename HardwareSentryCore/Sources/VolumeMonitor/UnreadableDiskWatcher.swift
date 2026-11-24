@@ -120,7 +120,8 @@ final class UnreadableDiskWatcher: @unchecked Sendable {
         settleTask = Task { [weak self, settleDelay] in
             try? await Task.sleep(for: settleDelay)
             guard !Task.isCancelled else { return }
-            await MainActor.run { self?.emitSettled() }
+            guard let strong = self else { return }
+            await MainActor.run { strong.emitSettled() }
         }
     }
 

@@ -16,8 +16,8 @@ import SystemIcons
 /// into the artwork today, so the mark there is extra, but that is the direction the artwork
 /// is going and the mark is what the replacement pictures will rely on.
 struct NotificationPreviewView: View {
-    @Bindable var model: EventSettingsModel
-    @Bindable var iconSources: IconSourceModel
+    @ObservedObject var model: EventSettingsModel
+    @ObservedObject var iconSources: IconSourceModel
     let show: (MonitorEventDescription, NotificationCategory, IconBadge?, IconSource, Bool) -> Void
 
     /// Sends somebody to the Notifications tab, on this module's icons.

@@ -5,8 +5,8 @@ import UniformTypeIdentifiers
 
 /// How the application presents itself, and how to keep a copy of every choice made in it.
 struct GeneralSettingsView: View {
-    @Bindable var model: GeneralSettingsModel
-    @Bindable var tuning: MonitorTuningModel
+    @ObservedObject var model: GeneralSettingsModel
+    @ObservedObject var tuning: MonitorTuningModel
     @State private var message: String?
 
     var body: some View {

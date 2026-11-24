@@ -1,10 +1,10 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 5.9
 import PackageDescription
 
 let package = Package(
     name: "HardwareSentryCore",
     platforms: [
-        .macOS(.v15)
+        .macOS(.v13)
     ],
     products: [
         .library(name: "MonitorRegistry", targets: ["MonitorRegistry"]),
@@ -12,23 +12,23 @@ let package = Package(
         .library(name: "SystemIcons", targets: ["SystemIcons"])
     ],
     dependencies: [
-        .package(url: "https://github.com/jensyleo/SignalCore.git", from: "1.0.0")
+        .package(path: "../Vendor/SignalCore")
     ],
     targets: [
         // Prints the catalogue as JSON, for `Tools/parity-audit.sh`. An executable rather
         // than a test so the audit can be run on its own, without a build of the app.
         .executableTarget(
             name: "sentry-inventory",
-            dependencies: ["MonitorRegistry", "SentryContract"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["MonitorRegistry", "SentryContract"]
+
         ),
 
         // What every monitor is allowed to know about. Deliberately small: a monitor
         // depends on this and on nothing else of the application.
         .target(
             name: "SentryContract",
-            dependencies: [.product(name: "SignalCore", package: "SignalCore")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: [.product(name: "SignalCore", package: "SignalCore")]
+
         ),
 
         // One module per monitor. Being separate modules is what keeps them apart: what
@@ -37,44 +37,44 @@ let package = Package(
         .target(
             name: "USBMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "ThermalMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "GamepadMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "ThunderboltMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "ScannerMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "CameraMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "DisplayMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
 
         // Genuine C bridge (not a constant-casting fix like the others) — CUPS is a real C
@@ -84,20 +84,20 @@ let package = Package(
         .target(
             name: "PrinterMonitor",
             dependencies: ["SentryContract", "CCUPS"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "BluetoothMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "AudioMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         // A C shim, for the same reason CCUPS is one: the header ships in the SDK but is
         // not in IOKit's module map, so Swift cannot see it — and the interface behind it
@@ -106,35 +106,35 @@ let package = Package(
         .target(
             name: "VolumeMonitor",
             dependencies: ["SentryContract", "CNVMeSMART"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "PowerMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
         .target(
             name: "NetworkMonitor",
             dependencies: ["SentryContract"],
-            resources: [.process("Resources")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            resources: [.process("Resources")]
+
         ),
 
         // The operating system's own pictures of devices, read at run time. No artwork of
         // Apple's is part of this package; only the paths to where macOS keeps it.
         .target(
             name: "SystemIcons",
-            dependencies: [.product(name: "SignalCore", package: "SignalCore")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: [.product(name: "SignalCore", package: "SignalCore")]
+
         ),
 
         // The only place that knows the whole list.
         .target(
             name: "MonitorRegistry",
-            dependencies: ["SentryContract", "USBMonitor", "ThermalMonitor", "GamepadMonitor", "ThunderboltMonitor", "ScannerMonitor", "CameraMonitor", "DisplayMonitor", "PrinterMonitor", "BluetoothMonitor", "AudioMonitor", "VolumeMonitor", "PowerMonitor", "NetworkMonitor"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["SentryContract", "USBMonitor", "ThermalMonitor", "GamepadMonitor", "ThunderboltMonitor", "ScannerMonitor", "CameraMonitor", "DisplayMonitor", "PrinterMonitor", "BluetoothMonitor", "AudioMonitor", "VolumeMonitor", "PowerMonitor", "NetworkMonitor"]
+
         ),
 
         // Test-only helpers shared across the monitor test targets — a wait-on-the-clock
@@ -145,85 +145,85 @@ let package = Package(
 
         .testTarget(
             name: "SentryContractTests",
-            dependencies: ["SentryContract"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["SentryContract"]
+
         ),
         .testTarget(
             name: "USBMonitorTests",
-            dependencies: ["USBMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["USBMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "ThermalMonitorTests",
-            dependencies: ["ThermalMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["ThermalMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "GamepadMonitorTests",
-            dependencies: ["GamepadMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["GamepadMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "ThunderboltMonitorTests",
-            dependencies: ["ThunderboltMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["ThunderboltMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "ScannerMonitorTests",
-            dependencies: ["ScannerMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["ScannerMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "CameraMonitorTests",
-            dependencies: ["CameraMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["CameraMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "DisplayMonitorTests",
-            dependencies: ["DisplayMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["DisplayMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             // CCUPS as well, so the capability test can name the real bits rather than
             // hardcoding numbers that would not follow the header if it ever changed.
             name: "PrinterMonitorTests",
-            dependencies: ["PrinterMonitor", "CCUPS", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["PrinterMonitor", "CCUPS", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "BluetoothMonitorTests",
-            dependencies: ["BluetoothMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["BluetoothMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "AudioMonitorTests",
-            dependencies: ["AudioMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["AudioMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "VolumeMonitorTests",
-            dependencies: ["VolumeMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["VolumeMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "PowerMonitorTests",
-            dependencies: ["PowerMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["PowerMonitor", "SentryTestSupport"]
+
         ),
         .testTarget(
             name: "SystemIconsTests",
-            dependencies: ["SystemIcons", .product(name: "SignalCore", package: "SignalCore")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["SystemIcons", .product(name: "SignalCore", package: "SignalCore")]
+
         ),
         .testTarget(
             name: "MonitorRegistryTests",
-            dependencies: ["MonitorRegistry", "SentryContract", "SystemIcons"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["MonitorRegistry", "SentryContract", "SystemIcons"]
+
         ),
         .testTarget(
             name: "NetworkMonitorTests",
-            dependencies: ["NetworkMonitor", "SentryTestSupport"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            dependencies: ["NetworkMonitor", "SentryTestSupport"]
+
         )
     ]
 )

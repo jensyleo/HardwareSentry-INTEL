@@ -512,7 +512,7 @@ private final class Watcher: NSObject, CWEventDelegate, CLLocationManagerDelegat
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(radioPollInterval))
                 guard !Task.isCancelled else { return }
-                await MainActor.run {
+                await MainActor.run { [weak self] in
                     self?.emitWiFiRadioPower()
                     self?.emitWiFiInterfaceMode()
                 }
@@ -532,7 +532,7 @@ private final class Watcher: NSObject, CWEventDelegate, CLLocationManagerDelegat
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(self?.signalPolling.interval ?? 12))
                 guard !Task.isCancelled else { return }
-                await MainActor.run {
+                await MainActor.run { [weak self] in
                     self?.emitWiFiSignal()
                     self?.emitPromiscuousInterfaces()
                     self?.emitBondMemberStatus()

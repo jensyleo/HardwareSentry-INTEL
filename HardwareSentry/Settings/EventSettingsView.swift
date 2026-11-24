@@ -16,10 +16,10 @@ import ThermalMonitor
 /// single column, changing one setting means hunting for it, and the module a row belongs
 /// to is only knowable by scrolling back up to the nearest heading.
 struct EventSettingsView: View {
-    @Bindable var model: EventSettingsModel
-    @Bindable var iconOverrides: IconOverrideStore
-    @Bindable var iconSources: IconSourceModel
-    @Bindable var tuning: MonitorTuningModel
+    @ObservedObject var model: EventSettingsModel
+    @ObservedObject var iconOverrides: IconOverrideStore
+    @ObservedObject var iconSources: IconSourceModel
+    @ObservedObject var tuning: MonitorTuningModel
     /// Fires one thermal transition on demand. See `ThermalSimulator`.
     let simulateThermal: (ThermalState, ThermalState) -> Void
     /// Fires one of a module's own declared events on demand. See `GenericEventSimulator`.
@@ -85,7 +85,7 @@ struct EventSettingsView: View {
             if let module = model.modules.first(where: { $0.id == selection }) {
                 ModuleDetail(module: module, model: model, iconOverrides: iconOverrides, iconSources: iconSources, tuning: tuning, simulateThermal: simulateThermal, simulateEvent: simulateEvent, simulate: simulate, checkBatteryHealthNow: checkBatteryHealthNow, checkSerialVendorUpdateNow: checkSerialVendorUpdateNow, pane: $pane, highlightedEvent: $highlightedEvent)
             } else {
-                ContentUnavailableView(
+                EmptyStateView(
                     "Choose a Module",
                     systemImage: "sidebar.left",
                     description: Text("Pick one on the left to choose which of its notifications arrive.")
@@ -100,7 +100,7 @@ struct EventSettingsView: View {
 /// because it is the first thing to decide: which modules run at all comes before which of
 /// their notifications arrive.
 private struct PerformancePicker: View {
-    @Bindable var model: EventSettingsModel
+    @ObservedObject var model: EventSettingsModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -141,9 +141,9 @@ private struct PerformancePicker: View {
 /// One module in the list: its artwork, its name, and whether it is running at all.
 private struct ModuleRow: View {
     let module: MonitorDescription
-    @Bindable var model: EventSettingsModel
-    @Bindable var iconOverrides: IconOverrideStore
-    @Bindable var iconSources: IconSourceModel
+    @ObservedObject var model: EventSettingsModel
+    @ObservedObject var iconOverrides: IconOverrideStore
+    @ObservedObject var iconSources: IconSourceModel
 
     var body: some View {
         HStack(spacing: 8) {
@@ -211,10 +211,10 @@ enum ModulePane {
 /// says, and what each one looks like.
 private struct ModuleDetail: View {
     let module: MonitorDescription
-    @Bindable var model: EventSettingsModel
-    @Bindable var iconOverrides: IconOverrideStore
-    @Bindable var iconSources: IconSourceModel
-    @Bindable var tuning: MonitorTuningModel
+    @ObservedObject var model: EventSettingsModel
+    @ObservedObject var iconOverrides: IconOverrideStore
+    @ObservedObject var iconSources: IconSourceModel
+    @ObservedObject var tuning: MonitorTuningModel
     let simulateThermal: (ThermalState, ThermalState) -> Void
     let simulateEvent: (MonitorEventDescription, NotificationCategory) -> Void
     let simulate: (MonitorSimulation) -> Void
@@ -1176,7 +1176,7 @@ private struct IgnoredDrivesEditor: View {
     /// A native, Finder-style picker rooted at `/Volumes`, exactly where the original application's own
     /// "Add" opens one — someone silencing a drive is choosing from what is actually
     /// attached, not remembering how its name is spelled.
-    private func choose() {
+    @MainActor private func choose() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false

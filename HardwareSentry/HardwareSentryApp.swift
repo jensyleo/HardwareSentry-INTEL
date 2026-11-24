@@ -18,7 +18,7 @@ struct HardwareSentryApp: App {
         )) {
             Button("About HardwareSentry") {
                 NSApplication.shared.orderFrontStandardAboutPanel(nil)
-                NSApplication.shared.activate()
+                NSApp.activate(ignoringOtherApps: true)
             }
 
             HelpButton()
@@ -98,7 +98,7 @@ struct HelpMenuCommands: Commands {
         CommandGroup(replacing: .help) {
             Button("HardwareSentry Help") {
                 openWindow(id: HardwareSentryApp.helpWindowID)
-                NSApplication.shared.activate()
+                Task { @MainActor in NSApp.activate(ignoringOtherApps: true) }
             }
             .keyboardShortcut("?", modifiers: .command)
         }
@@ -114,7 +114,7 @@ struct AboutMenuCommands: Commands {
         CommandGroup(replacing: .appInfo) {
             Button("About HardwareSentry") {
                 openWindow(id: HardwareSentryApp.aboutWindowID)
-                NSApplication.shared.activate()
+                Task { @MainActor in NSApp.activate(ignoringOtherApps: true) }
             }
         }
     }
@@ -127,7 +127,7 @@ private struct HelpButton: View {
     var body: some View {
         Button("HardwareSentry Help") {
             openWindow(id: HardwareSentryApp.helpWindowID)
-            NSApplication.shared.activate()
+            NSApp.activate(ignoringOtherApps: true)
         }
         .keyboardShortcut("?")
     }
@@ -143,7 +143,7 @@ private struct SettingsButton: View {
     var body: some View {
         Button("Settings…") {
             openWindow(id: HardwareSentryApp.settingsWindowID)
-            NSApplication.shared.activate()
+            NSApp.activate(ignoringOtherApps: true)
         }
         .keyboardShortcut(",")
     }
@@ -168,7 +168,7 @@ private struct MenuBarIcon: View {
     /// rather than merely displayed small: a SwiftUI `.frame` on the view leaves the
     /// underlying `NSImage` at its full 1024pt and the status item grows to match, which
     /// pushes it off the bar entirely.
-    private static let image: NSImage? = {
+    @MainActor private static let image: NSImage? = {
         guard let icon = NSApplication.shared.applicationIconImage else { return nil }
         let side: CGFloat = 18
         let resized = NSImage(size: NSSize(width: side, height: side))

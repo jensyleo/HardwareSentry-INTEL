@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import MonitorRegistry
 import SentryContract
 import ThermalMonitor
@@ -123,7 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         guard let olderInstance else { return true }
 
-        olderInstance.activate()
+        olderInstance.activate(options: [])
         NSApp.terminate(nil)
         return false
     }
@@ -138,7 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // next unrelated setting.
         DistributedNotificationCenter.default().addObserver(
             forName: Notification.Name("AppleInterfaceThemeChangedNotification"), object: nil, queue: .main
-        ) { [weak self] _ in Task { @MainActor in self?.applyAutomaticTheme() } }
+        ) { [weak self] _ in Task { @MainActor [weak self] in self?.applyAutomaticTheme() } }
         applyAutomaticTheme()
         iconOverrides = IconOverrideStore(keyPrefix: "HardwareSentry.IconOverride")
         adoptCustomIconFiles()
@@ -405,7 +406,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             openSettingsWindow?()
         }
-        NSApplication.shared.activate()
+        NSApp.activate(ignoringOtherApps: true)
         // Deferred: when the window is being created rather than raised, it does not
         // exist yet at this point, and neither does the toolbar being adjusted.
         DispatchQueue.main.async { [weak self] in self?.tidySettingsToolbar() }
@@ -424,7 +425,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             $0.identifier?.rawValue == HardwareSentryApp.settingsWindowID
         }), let toolbar = window.toolbar else { return }
         toolbar.allowsUserCustomization = false
-        toolbar.allowsDisplayModeCustomization = false
         toolbar.displayMode = .iconAndLabel
     }
 
@@ -450,33 +450,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// `withObservationTracking` fires once and then forgets, so this re-arms itself each
     /// time — the standard way to follow an observable object from outside SwiftUI, which
     /// does this re-arming on your behalf as part of rendering.
+    private var observationTokens = Set<AnyCancellable>()
+
     private func trackAppearanceChanges() {
-        withObservationTracking {
-            _ = appearance.appearance
-        } onChange: { [weak self] in
+        appearance.objectWillChange.sink { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
                 self.bannerDelivery.appearance = self.appearance.appearance
-                self.trackAppearanceChanges()
             }
-        }
+        }.store(in: &observationTokens)
     }
 
     /// The same re-arming trick as `trackAppearanceChanges`, for the icon choices: the
     /// middleware runs inside an actor and cannot observe a main-actor store, so the
     /// change is pushed to it instead.
     private func trackIconOverrideChanges() {
-        withObservationTracking {
-            _ = iconOverrides.revision
-        } onChange: { [weak self] in
+        iconOverrides.objectWillChange.sink { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
                 let overrides = self.iconOverrides.overrides
                 await self.iconOverrideMiddleware.update(overrides)
                 self.removeUnusedCustomIcons()
-                self.trackIconOverrideChanges()
             }
-        }
+        }.store(in: &observationTokens)
     }
 
     /// Every picture an icon choice points at.
@@ -512,29 +508,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// The same again for each module's icon source.
     private func trackIconSourceChanges() {
-        withObservationTracking {
-            _ = iconSources.revision
-        } onChange: { [weak self] in
+        iconSources.objectWillChange.sink { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
                 await self.systemIconMiddleware.update(self.iconSources.choices)
-                self.trackIconSourceChanges()
             }
-        }
+        }.store(in: &observationTokens)
     }
 
     /// Keeps the menu bar item in step with the General tab, the same re-arming way the
     /// appearance and icon settings are followed.
     private func trackIconVisibilityChanges() {
-        withObservationTracking {
-            _ = general.iconVisibility
-        } onChange: { [weak self] in
+        general.objectWillChange.sink { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
                 self.menuBarIconIsVisible = self.general.iconVisibility.showsMenuBarIcon
-                self.trackIconVisibilityChanges()
             }
-        }
+        }.store(in: &observationTokens)
     }
 
     /// Asks each monitor what it can raise, and what those should be for someone who has

@@ -1,5 +1,5 @@
 import Foundation
-import Observation
+import Combine
 import SignalCore
 
 /// Where a module's notification icons come from.
@@ -38,14 +38,13 @@ public struct IconSourceChoices: Sendable, Equatable {
 /// Only a departure from the default is written: a module set back to the default loses
 /// its key entirely, so the absence of a key and the default can never disagree.
 @MainActor
-@Observable
-public final class IconSourceStore {
+public final class IconSourceStore: ObservableObject {
     private let defaults: UserDefaults
     private let keyPrefix: String
 
-    public private(set) var choices: IconSourceChoices
+    @Published public private(set) var choices: IconSourceChoices
     /// Bumped on every change, for a host that pushes the new value somewhere.
-    public private(set) var revision = 0
+    @Published public private(set) var revision = 0
 
     public init(defaults: UserDefaults = .standard, keyPrefix: String = "HardwareSentry.IconSource") {
         self.defaults = defaults

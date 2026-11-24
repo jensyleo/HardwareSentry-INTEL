@@ -27,7 +27,7 @@ extension CameraDetail {
             position: Self.describe(position: device.position),
             maxResolution: widest.map { "\($0.width)x\($0.height)" },
             maxFrameRate: fastest.map { String(format: "%.0f fps", $0) },
-            isContinuityCamera: device.deviceType == .continuityCamera,
+            isContinuityCamera: { if #available(macOS 14.0, *) { return device.deviceType == .continuityCamera } else { return false } }(),
             isDeskViewCamera: device.deviceType == .deskViewCamera,
             isCenterStageActive: device.isCenterStageActive,
             isSystemPreferred: AVCaptureDevice.systemPreferredCamera?.uniqueID == device.uniqueID,

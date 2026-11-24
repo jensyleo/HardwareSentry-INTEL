@@ -1,5 +1,5 @@
 import AppKit
-import Observation
+import Combine
 import ServiceManagement
 import SignalCore
 
@@ -39,12 +39,11 @@ enum IconVisibility: Int, CaseIterable, Identifiable {
 /// The General tab: where the application shows itself, whether it starts with the Mac,
 /// what it says at launch, and backing all of that up.
 @MainActor
-@Observable
-final class GeneralSettingsModel {
-    @ObservationIgnored private let preferences: NotificationPreferencesStore
-    @ObservationIgnored private let defaults: UserDefaults
+final class GeneralSettingsModel: ObservableObject {
+    private let preferences: NotificationPreferencesStore
+    private let defaults: UserDefaults
 
-    private var revision = 0
+    @Published private var revision = 0
 
     init(preferences: NotificationPreferencesStore, defaults: UserDefaults = .standard) {
         self.preferences = preferences
@@ -84,7 +83,7 @@ final class GeneralSettingsModel {
         alert.addButton(withTitle: "Hide the Icon")
         alert.addButton(withTitle: "Cancel")
         alert.showsSuppressionButton = true
-        NSApplication.shared.activate()
+        NSApp.activate(ignoringOtherApps: true)
 
         guard alert.runModal() == .alertFirstButtonReturn else { return false }
         if alert.suppressionButton?.state == .on {
@@ -113,12 +112,12 @@ final class GeneralSettingsModel {
 
     /// Called as the settings window appears and disappears, so the policy can be held at
     /// `.regular` while it is on screen.
-    private(set) var isSettingsWindowOpen = false
+    @Published private(set) var isSettingsWindowOpen = false
 
     func settingsWindowOpened() {
         isSettingsWindowOpen = true
         NSApplication.shared.setActivationPolicy(.regular)
-        NSApplication.shared.activate()
+        NSApp.activate(ignoringOtherApps: true)
     }
 
     func settingsWindowClosed() {

@@ -9,7 +9,7 @@ import SwiftUI
 /// about the cost of remembering: whether to, for how long, and which modules are worth
 /// it.
 struct HistoryView: View {
-    @Bindable var store: NotificationHistoryStore
+    @ObservedObject var store: NotificationHistoryStore
     /// The modules to offer, and which of them are running. Taken from the same
     /// description the notifications screen uses, so a module added later appears here
     /// without this being touched.
@@ -75,7 +75,7 @@ struct HistoryView: View {
             }
 
             if store.entries.isEmpty {
-                ContentUnavailableView(
+                EmptyStateView(
                     "Nothing Yet",
                     systemImage: "clock",
                     description: Text(store.isEnabled
@@ -118,4 +118,32 @@ struct HistoryView: View {
     }
 
     private var allCategories: [String] { modules.map(\.category.rawValue) }
+}
+
+/// Stand-in for `EmptyStateView` (macOS 14+), so the Intel build runs on macOS 13.
+struct EmptyStateView: View {
+    let title: String
+    let systemImage: String
+    var message: Text?
+
+    init(_ title: String, systemImage: String, description: Text? = nil) {
+        self.title = title
+        self.systemImage = systemImage
+        self.message = description
+    }
+
+    static func search(text: String) -> EmptyStateView {
+        EmptyStateView("No Results for “\(text)”", systemImage: "magnifyingglass",
+                       description: Text("Check the spelling or try a new search."))
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: systemImage).font(.system(size: 40)).foregroundStyle(.secondary)
+            Text(title).font(.title2.bold())
+            message?.foregroundStyle(.secondary).multilineTextAlignment(.center)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 }

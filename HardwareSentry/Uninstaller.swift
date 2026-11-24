@@ -14,7 +14,7 @@ enum Uninstaller {
     /// Shows the confirmation alert and, if the person agrees, quits the application and
     /// removes it. Does nothing if they cancel.
     static func confirmAndRun() {
-        NSApplication.shared.activate()
+        NSApp.activate(ignoringOtherApps: true)
 
         let alert = NSAlert()
         alert.alertStyle = .critical

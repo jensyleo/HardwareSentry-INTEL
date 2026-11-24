@@ -1,5 +1,5 @@
 import Foundation
-import Observation
+import Combine
 import SignalCore
 
 /// One notification, as it was shown.
@@ -41,19 +41,18 @@ struct HistoryEntry: Identifiable, Codable, Sendable, Equatable {
 /// of what is stored: they belong to whichever monitor raised the notification and can be
 /// hundreds of kilobytes, which is not what a log should be made of.
 @MainActor
-@Observable
-final class NotificationHistoryStore {
+final class NotificationHistoryStore: ObservableObject {
     /// Newest first, which is the order it is read in.
-    private(set) var entries: [HistoryEntry] = []
+    @Published private(set) var entries: [HistoryEntry] = []
 
     /// Enough to answer "what did I miss this morning" without becoming an archive. Older
     /// ones fall off the end rather than the file growing without limit.
     private let limit: Int
-    @ObservationIgnored private let fileURL: URL?
-    @ObservationIgnored private let defaults: UserDefaults
-    @ObservationIgnored private var saveTask: Task<Void, Never>?
+    private let fileURL: URL?
+    private let defaults: UserDefaults
+    @Published private var saveTask: Task<Void, Never>?
 
-    private var revision = 0
+    @Published private var revision = 0
 
     init(limit: Int = 2000, directory: URL? = nil, defaults: UserDefaults = .standard) {
         self.limit = limit

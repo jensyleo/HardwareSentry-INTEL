@@ -1,5 +1,5 @@
 import AppKit
-import Observation
+import Combine
 import SignalCore
 import SystemIcons
 
@@ -9,16 +9,15 @@ import SystemIcons
 /// The pictures are loaded off the main thread, a module at a time, as its tab is opened,
 /// and kept: there are a few dozen at most, a few kilobytes each.
 @MainActor
-@Observable
-final class IconSourceModel {
+final class IconSourceModel: ObservableObject {
     let store: IconSourceStore
-    @ObservationIgnored private let catalog: SystemIconCatalog
+    private let catalog: SystemIconCatalog
 
     /// The operating system's picture for each kind that has one. A kind that has been
     /// looked up and has none is in `unavailable` instead, so "not loaded yet" and "macOS
     /// has no picture of this" never look the same.
-    private(set) var images: [String: NSImage] = [:]
-    private(set) var unavailable: Set<String> = []
+    @Published private(set) var images: [String: NSImage] = [:]
+    @Published private(set) var unavailable: Set<String> = []
 
     init(store: IconSourceStore, catalog: SystemIconCatalog) {
         self.store = store

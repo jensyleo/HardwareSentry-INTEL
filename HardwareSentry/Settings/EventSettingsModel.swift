@@ -1,6 +1,6 @@
 import Foundation
 import MonitorRegistry
-import Observation
+import Combine
 import SentryContract
 import SignalCore
 
@@ -15,17 +15,16 @@ import SignalCore
 /// has no business. This wraps it for the one place that does need to redraw when a
 /// setting changes.
 @MainActor
-@Observable
-final class EventSettingsModel {
-    private(set) var modules: [MonitorDescription] = []
+final class EventSettingsModel: ObservableObject {
+    @Published private(set) var modules: [MonitorDescription] = []
 
-    @ObservationIgnored private let preferences: NotificationPreferencesStore
-    @ObservationIgnored private let registry: MonitorRegistry
-    @ObservationIgnored private let defaults: UserDefaults
+    private let preferences: NotificationPreferencesStore
+    private let registry: MonitorRegistry
+    private let defaults: UserDefaults
 
     /// Bumped on every change so the whole screen redraws — a module being switched off
     /// greys out its events, so a row cannot only refresh itself.
-    private var revision = 0
+    @Published private var revision = 0
 
     init(
         preferences: NotificationPreferencesStore,

@@ -55,10 +55,10 @@ private final class Watcher: NSObject, @unchecked Sendable {
 
     func start() {
         let center = NotificationCenter.default
-        connectToken = center.addObserver(forName: AVCaptureDevice.wasConnectedNotification, object: nil, queue: nil) { [weak self] note in
+        connectToken = center.addObserver(forName: .AVCaptureDeviceWasConnected, object: nil, queue: nil) { [weak self] note in
             self?.reportConnection(note, connected: true)
         }
-        disconnectToken = center.addObserver(forName: AVCaptureDevice.wasDisconnectedNotification, object: nil, queue: nil) { [weak self] note in
+        disconnectToken = center.addObserver(forName: .AVCaptureDeviceWasDisconnected, object: nil, queue: nil) { [weak self] note in
             self?.reportConnection(note, connected: false)
         }
 
@@ -95,9 +95,11 @@ private final class Watcher: NSObject, @unchecked Sendable {
         if #available(macOS 14.0, *) {
             observeVideoEffect(keyPath: "reactionEffectsEnabled", effect: .reactions) { AVCaptureDevice.reactionEffectsEnabled }
         }
+        #if compiler(>=6.0)
         if #available(macOS 15.0, *) {
             observeVideoEffect(keyPath: "backgroundReplacementEnabled", effect: .backgroundReplacement) { AVCaptureDevice.isBackgroundReplacementEnabled }
         }
+        #endif
     }
 
     func stop() {
@@ -120,8 +122,10 @@ private final class Watcher: NSObject, @unchecked Sendable {
     // MARK: Connect/disconnect
 
     private func announceAlreadyConnected() {
+        var types: [AVCaptureDevice.DeviceType] = [.builtInWideAngleCamera, .deskViewCamera]
+        if #available(macOS 14.0, *) { types += [.external, .continuityCamera] } else { types.append(.externalUnknown) }
         let session = AVCaptureDevice.DiscoverySession(
-            deviceTypes: [.builtInWideAngleCamera, .external, .continuityCamera, .deskViewCamera],
+            deviceTypes: types,
             mediaType: .video,
             position: .unspecified
         )
