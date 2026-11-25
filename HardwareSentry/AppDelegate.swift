@@ -46,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         launchDate = Date()
-        general.refreshLoginAgentAtLaunch()
+        general.healStartAtLogin()
         // On macOS 13 SwiftUI does not reliably call `onDisappear` when the settings window is
         // closed with ⌘W, so the app stayed `.regular` (Dock icon, menu bar) afterwards. Follow
         // the window itself instead; both calls are safe to repeat.

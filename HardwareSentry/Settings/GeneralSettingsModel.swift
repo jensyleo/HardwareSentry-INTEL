@@ -138,54 +138,49 @@ final class GeneralSettingsModel: ObservableObject {
     var startsAtLogin: Bool {
         get {
             _ = revision
-            return Self.loginAgentIsInstalled
+            return SMAppService.mainApp.status == .enabled
         }
         set {
-            if newValue { Self.installLoginAgent() } else { Self.removeLoginAgent() }
-            // Drop any registration made by earlier builds through SMAppService: on an
-            // ad-hoc-signed build every rebuild looked like a new login item to macOS, so the
-            // app was listed twice and the switch read back OFF. A LaunchAgent is keyed by its
-            // fixed label, so it cannot duplicate.
-            try? SMAppService.mainApp.unregister()
+            // What the person last chose, kept apart from the system's status for *this*
+            // binary: ad-hoc builds get a new code hash on every rebuild, so after a reinstall
+            // macOS sees an unregistered app and the switch would read OFF though it was never
+            // turned off. `healStartAtLogin()` re-asserts this intent at launch.
+            defaults.set(newValue, forKey: Self.startAtLoginIntentKey)
+            applyStartAtLogin(newValue)
             revision += 1
         }
     }
 
-    private static let loginAgentLabel = Bundle.main.bundleIdentifier ?? "com.jensyleo.hardwaresentry"
-    private static var loginAgentURL: URL {
-        URL(fileURLWithPath: NSHomeDirectory() + "/Library/LaunchAgents/\(loginAgentLabel).plist")
-    }
+    private static let startAtLoginIntentKey = "HardwareSentry.StartAtLoginIntent"
 
-    private static var loginAgentIsInstalled: Bool {
-        guard let plist = NSDictionary(contentsOf: loginAgentURL),
-              let args = plist["ProgramArguments"] as? [String], let exe = args.first else { return false }
-        return FileManager.default.isExecutableFile(atPath: exe)
-    }
-
-    private static func installLoginAgent() {
-        guard let exe = Bundle.main.executablePath else { return }
-        let plist: [String: Any] = [
-            "Label": loginAgentLabel,
-            "ProgramArguments": [exe],
-            "RunAtLoad": true,
-            "ProcessType": "Interactive",
-        ]
-        try? FileManager.default.createDirectory(at: loginAgentURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        (plist as NSDictionary).write(to: loginAgentURL, atomically: true)
-    }
-
-    private static func removeLoginAgent() {
-        try? FileManager.default.removeItem(at: loginAgentURL)
-    }
-
-    /// The choice is stored in the agent file, whose path is not tied to a build, so a
-    /// reinstall at the same location keeps it. Re-pointed at the running binary at every
-    /// launch in case the app was moved.
-    func refreshLoginAgentAtLaunch() {
-        if Self.loginAgentIsInstalled || FileManager.default.fileExists(atPath: Self.loginAgentURL.path) {
-            Self.installLoginAgent()
+    /// Skips a call that would only re-confirm the current state, so this never adds a second
+    /// Login Items entry for the same running binary.
+    private func applyStartAtLogin(_ enabled: Bool) {
+        let service = SMAppService.mainApp
+        let status = service.status
+        if enabled ? (status == .enabled) : (status == .notRegistered) { return }
+        do {
+            if enabled { try service.register() } else { try service.unregister() }
+        } catch {
+            // Most often refused because the application is not in /Applications; the
+            // switch then simply keeps reflecting the real status.
         }
-        try? SMAppService.mainApp.unregister()
+    }
+
+    /// Called at launch. If the person turned this on but the running binary is not registered
+    /// (the post-rebuild case), registers it again. Deferred a couple of seconds so a status
+    /// that has not settled right after login does not trigger a needless re-registration.
+    func healStartAtLogin() {
+        // Remove the LaunchAgent an earlier build of this fork wrote.
+        let agent = NSHomeDirectory() + "/Library/LaunchAgents/com.jensyleo.hardwaresentry.plist"
+        try? FileManager.default.removeItem(atPath: agent)
+        guard defaults.bool(forKey: Self.startAtLoginIntentKey) else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard let self, SMAppService.mainApp.status != .enabled else { return }
+            self.applyStartAtLogin(true)
+            self.revision += 1
+        }
     }
 
     // MARK: - What launching says
