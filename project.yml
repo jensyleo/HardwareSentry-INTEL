@@ -2,7 +2,7 @@ name: HardwareSentry
 options:
   bundleIdPrefix: com.jensyleo
   deploymentTarget:
-    macOS: "15.0"
+    macOS: "13.0"
   createIntermediateGroups: true
 
 packages:
