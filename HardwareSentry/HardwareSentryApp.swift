@@ -57,7 +57,7 @@ struct HardwareSentryApp: App {
         // and ⌘, are wired by hand below, which is the whole of what `Settings` gave us.
         Window("HardwareSentry Settings", id: Self.settingsWindowID) {
             SettingsView(appearance: delegate.appearance, bannerThemes: delegate.bannerThemes, showTestBanner: { delegate.showTestBanner() }, events: delegate.eventSettings, history: delegate.history, iconOverrides: delegate.iconOverrides, iconSources: delegate.iconSourceModel, general: delegate.general, tuning: delegate.tuning, checkBatteryHealthNow: { delegate.checkBatteryHealthNow() }, checkSerialVendorUpdateNow: { delegate.checkSerialVendorUpdateNow() }, simulateThermal: { delegate.simulateThermal(from: $0, to: $1) }, simulateEvent: { delegate.simulateEvent($0, category: $1) }, simulate: { delegate.simulate($0) }, previewNotification: { delegate.previewNotification($0, category: $1, badge: $2, source: $3, artIsTheState: $4) })
-                .onAppear { delegate.general.settingsWindowOpened() }
+                .onAppear { delegate.settingsViewAppeared() }
                 .onDisappear { delegate.general.settingsWindowClosed() }
         }
         .defaultSize(width: 620, height: 720)

@@ -45,6 +45,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        launchDate = Date()
+        general.refreshLoginAgentAtLaunch()
         // On macOS 13 SwiftUI does not reliably call `onDisappear` when the settings window is
         // closed with ⌘W, so the app stayed `.regular` (Dock icon, menu bar) afterwards. Follow
         // the window itself instead; both calls are safe to repeat.
@@ -56,7 +58,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { [weak self] note in
             guard (note.object as? NSWindow)?.identifier?.rawValue == HardwareSentryApp.settingsWindowID else { return }
             Task { @MainActor [weak self] in
-                guard let self, !self.general.isSettingsWindowOpen else { return }
+                guard let self, !self.general.isSettingsWindowOpen,
+                      Date().timeIntervalSince(self.launchDate) >= 4 || self.userAskedForSettings else { return }
                 self.general.settingsWindowOpened()
             }
         }
@@ -414,6 +417,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// second part a menu-bar-only application puts the window behind whatever was already
     /// on screen.
     func openSettings() {
+        userAskedForSettings = true
         // Raised if it already exists rather than opened again, so a second launch does not
         // leave two of them.
         if let existing = NSApplication.shared.windows.first(where: { $0.identifier?.rawValue == HardwareSentryApp.settingsWindowID }) {
@@ -445,6 +449,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Handed in by the scene, which is the only thing that can open a SwiftUI `Window`.
     var openSettingsWindow: (() -> Void)?
+
+    private var launchDate = Date()
+
+    /// A SwiftUI `Window` scene opens by itself at launch on macOS 13 (the "do not open at
+    /// launch" option arrived in 15). The settings window should only appear when asked for,
+    /// so one that shows up in the first seconds is closed again, unseen by the policy logic.
+    func settingsViewAppeared() {
+        if Date().timeIntervalSince(launchDate) < 4, !userAskedForSettings {
+            DispatchQueue.main.async {
+                NSApplication.shared.windows.first(where: { $0.identifier?.rawValue == HardwareSentryApp.settingsWindowID })?.close()
+            }
+            return
+        }
+        general.settingsWindowOpened()
+    }
+
+    /// Set when the person opens Settings themselves (menu item or ⌘,).
+    var userAskedForSettings = false
 
     /// A menu-bar application outlives its windows: the banners it draws are windows, and
     /// the last of them going away is the normal state of things, not a reason to quit.

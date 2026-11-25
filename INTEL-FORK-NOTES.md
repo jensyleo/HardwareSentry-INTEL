@@ -17,3 +17,5 @@ xcodebuild -project HardwareSentry.xcodeproj -scheme HardwareSentry -configurati
 ```
 Status: Debug build succeeds and the app launches on macOS 13.7 (Intel). Not yet exercised feature by feature.
 - Default icon source is **App** (the application's own artwork), not System; matches the Apple Silicon build as the owner uses it. System is still one click away per module in the Icons tab.
+- Settings window no longer opens at launch (macOS 13 opens SwiftUI `Window` scenes automatically; closed again within the first 4 s unless the person asked for it).
+- "Start at login" uses a LaunchAgent (`~/Library/LaunchAgents/com.jensyleo.hardwaresentry.plist`) instead of `SMAppService`, because ad-hoc rebuilds change the cdhash and macOS listed the app twice / read the switch back OFF (same problem as HG4MAC-INTEL). An orphaned entry from an earlier build must be removed once by hand in System Settings ▸ General ▸ Login Items.

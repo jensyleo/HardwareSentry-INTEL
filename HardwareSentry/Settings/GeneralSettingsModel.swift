@@ -138,22 +138,54 @@ final class GeneralSettingsModel: ObservableObject {
     var startsAtLogin: Bool {
         get {
             _ = revision
-            return SMAppService.mainApp.status == .enabled
+            return Self.loginAgentIsInstalled
         }
         set {
-            do {
-                if newValue {
-                    try SMAppService.mainApp.register()
-                } else {
-                    try SMAppService.mainApp.unregister()
-                }
-            } catch {
-                // Registration can be refused — most often because the application is not
-                // in /Applications. Nothing to do but leave the switch reflecting reality,
-                // which reading the real status already does.
-            }
+            if newValue { Self.installLoginAgent() } else { Self.removeLoginAgent() }
+            // Drop any registration made by earlier builds through SMAppService: on an
+            // ad-hoc-signed build every rebuild looked like a new login item to macOS, so the
+            // app was listed twice and the switch read back OFF. A LaunchAgent is keyed by its
+            // fixed label, so it cannot duplicate.
+            try? SMAppService.mainApp.unregister()
             revision += 1
         }
+    }
+
+    private static let loginAgentLabel = Bundle.main.bundleIdentifier ?? "com.jensyleo.hardwaresentry"
+    private static var loginAgentURL: URL {
+        URL(fileURLWithPath: NSHomeDirectory() + "/Library/LaunchAgents/\(loginAgentLabel).plist")
+    }
+
+    private static var loginAgentIsInstalled: Bool {
+        guard let plist = NSDictionary(contentsOf: loginAgentURL),
+              let args = plist["ProgramArguments"] as? [String], let exe = args.first else { return false }
+        return FileManager.default.isExecutableFile(atPath: exe)
+    }
+
+    private static func installLoginAgent() {
+        guard let exe = Bundle.main.executablePath else { return }
+        let plist: [String: Any] = [
+            "Label": loginAgentLabel,
+            "ProgramArguments": [exe],
+            "RunAtLoad": true,
+            "ProcessType": "Interactive",
+        ]
+        try? FileManager.default.createDirectory(at: loginAgentURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        (plist as NSDictionary).write(to: loginAgentURL, atomically: true)
+    }
+
+    private static func removeLoginAgent() {
+        try? FileManager.default.removeItem(at: loginAgentURL)
+    }
+
+    /// The choice is stored in the agent file, whose path is not tied to a build, so a
+    /// reinstall at the same location keeps it. Re-pointed at the running binary at every
+    /// launch in case the app was moved.
+    func refreshLoginAgentAtLaunch() {
+        if Self.loginAgentIsInstalled || FileManager.default.fileExists(atPath: Self.loginAgentURL.path) {
+            Self.installLoginAgent()
+        }
+        try? SMAppService.mainApp.unregister()
     }
 
     // MARK: - What launching says
